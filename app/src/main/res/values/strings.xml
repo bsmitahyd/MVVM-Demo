@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">EngineerDemo</string>
+    <string name="created_at">Created at</string>
+    <string name="title">Title</string>
+</resources>
