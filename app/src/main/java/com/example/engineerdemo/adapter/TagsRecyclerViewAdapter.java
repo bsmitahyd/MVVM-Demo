@@ -4,18 +4,26 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.engineerdemo.MainActivity;
 import com.example.engineerdemo.R;
+import com.example.engineerdemo.interfaces.OnPostClickedInterface;
 import com.example.engineerdemo.model.DataModel;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.Unbinder;
 
 public class TagsRecyclerViewAdapter extends RecyclerView.Adapter<TagsRecyclerViewAdapter.TagsViewHolder> {
     private Context context;
@@ -25,7 +33,7 @@ public class TagsRecyclerViewAdapter extends RecyclerView.Adapter<TagsRecyclerVi
     OnLoadMoreListener loadMoreListener;
     boolean isLoading = false;
     private boolean enableDisableSwitch;
-    private OnLoadMoreListener delegate;
+    public OnPostClickedInterface delegate;
 
     public TagsRecyclerViewAdapter(Context context, List<DataModel.HitList> hitLists) {
         this.context = context;
@@ -49,6 +57,21 @@ public class TagsRecyclerViewAdapter extends RecyclerView.Adapter<TagsRecyclerVi
         final DataModel.HitList list = hitLists.get(position);
         holder.tagsTextView.setText(list.getTitle());
         holder.dateTextView.setText(changeDateFormate(list.getCreated_at()));
+        if (hitLists.get(position).isSelected()) {
+            holder.aSwitch.setChecked(true);
+
+        } else {
+            holder.aSwitch.setChecked(false);
+        }
+        holder.mCardView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                list.setSelected(!list.isSelected());
+                notifyItemChanged(holder.getAdapterPosition(), list);
+                delegate.OnPostClicked(list);
+
+            }
+        });
     }
 
     @Override
@@ -57,13 +80,18 @@ public class TagsRecyclerViewAdapter extends RecyclerView.Adapter<TagsRecyclerVi
     }
 
     public class TagsViewHolder extends RecyclerView.ViewHolder {
+        @BindView(R.id.simpleSwitch)
+        Switch aSwitch;
+        @BindView(R.id.tvTitle)
         TextView tagsTextView;
+        @BindView(R.id.tvObject)
         TextView dateTextView;
+        @BindView(R.id.cdMain)
+        CardView mCardView;
 
         public TagsViewHolder(@NonNull View itemView) {
             super(itemView);
-            tagsTextView = itemView.findViewById(R.id.tvTitle);
-            dateTextView = itemView.findViewById(R.id.tvObject);
+            Unbinder unbinder = ButterKnife.bind(this, itemView);
         }
     }
 

@@ -1,6 +1,7 @@
 package com.example.engineerdemo.webcalls;
 
 
+import com.example.engineerdemo.ApiConstants;
 import com.example.engineerdemo.model.DataModel;
 
 
@@ -11,6 +12,6 @@ import retrofit2.http.Query;
 public interface MyService {
 
     // TODO getting tags by date
-    @GET("search_by_date?tags=story")
+    @GET(ApiConstants.GET_TAGS_URL)
     Observable<DataModel> getTagsDta(@Query("page") int page);
 }

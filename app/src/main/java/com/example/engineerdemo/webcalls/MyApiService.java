@@ -12,7 +12,7 @@ public abstract class MyApiService {
     private static MyApiService service;
 
     private static void setServiceType() {
-        service = new CloudDataService();
+        service = new RemoteDataService();
     }
 
     public static MyApiService getService() {

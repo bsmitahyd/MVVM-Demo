@@ -7,13 +7,13 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 
 
-public class CloudDataService extends MyApiService {
+public class RemoteDataService extends MyApiService {
 
     //Holds service instance
     private MyService service;
 
     // Constructor
-    CloudDataService() {
+    RemoteDataService() {
         service = new RetrofitHelper().getMyService();
     }
 

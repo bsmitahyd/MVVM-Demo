@@ -19,6 +19,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.example.engineerdemo.MainActivity;
 import com.example.engineerdemo.R;
 import com.example.engineerdemo.adapter.TagsRecyclerViewAdapter;
+import com.example.engineerdemo.interfaces.OnPostClickedInterface;
 import com.example.engineerdemo.model.DataModel;
 import com.example.engineerdemo.viewmodel.DataViewModel;
 
@@ -29,15 +30,15 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 
-public class HomeFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
+public class HomeFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener, OnPostClickedInterface {
 
     private MainActivity activity;
     private TagsRecyclerViewAdapter tagsRecyclerViewAdapter;
     private DataViewModel dataViewModel;
     private List<DataModel.HitList> hitLists;
-    private RecyclerView.LayoutManager layoutManager;
     private int api_in_progress = 0;
-    int pagenumber = 0;
+    private int pagenumber = 0;
+    private int count = 0;
     private Unbinder unbinder;
 
     @BindView(R.id.recyclerView)
@@ -84,6 +85,8 @@ public class HomeFragment extends Fragment implements SwipeRefreshLayout.OnRefre
                 if (dataModel != null && dataModel.getHits() != null) {
                     //TODO - below (pagenumber == 1)is the first time api call or swipe to refresh
                     if (pagenumber == 1) {
+                        count = 0;
+                        activity.toolbar.setTitle("Total Selected posts = " + (count));
                         if (hitLists != null) {
                             hitLists.clear();
                             hitLists = new ArrayList<>();
@@ -102,8 +105,9 @@ public class HomeFragment extends Fragment implements SwipeRefreshLayout.OnRefre
     }
 
     private void bindList(List<DataModel.HitList> hitLists) {
-        activity.toolbar.setTitle("Total displaying posts = " + hitLists.size());
+        //activity.toolbar.setTitle("Total displaying posts = " + hitLists.size());
         tagsRecyclerViewAdapter = new TagsRecyclerViewAdapter(activity, hitLists);
+        tagsRecyclerViewAdapter.delegate = this;
         recyclerView.setAdapter(tagsRecyclerViewAdapter);
         tagsRecyclerViewAdapter.setLoadMoreListener(new TagsRecyclerViewAdapter.OnLoadMoreListener() {
             @Override
@@ -167,6 +171,20 @@ public class HomeFragment extends Fragment implements SwipeRefreshLayout.OnRefre
         super.onDestroy();
         if (unbinder != null) {
             unbinder.unbind();
+        }
+    }
+
+
+    @Override
+    public void OnPostClicked(DataModel.HitList hitList) {
+        if (hitList != null) {
+            if (hitList.isSelected()) {
+                count = count + 1;
+                activity.toolbar.setTitle("Total Selected posts = " + (count));
+            } else {
+                count = count - 1;
+                activity.toolbar.setTitle("Total Selected posts = " + (count));
+            }
         }
     }
 }
