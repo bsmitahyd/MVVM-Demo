@@ -12,9 +12,9 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
-import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.engineerdemo.MainActivity;
 import com.example.engineerdemo.R;
@@ -29,7 +29,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 
-public class HomeFragment extends Fragment {
+public class HomeFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
 
     private MainActivity activity;
     private TagsRecyclerViewAdapter tagsRecyclerViewAdapter;
@@ -37,13 +37,15 @@ public class HomeFragment extends Fragment {
     private List<DataModel.HitList> hitLists;
     private RecyclerView.LayoutManager layoutManager;
     private int api_in_progress = 0;
-    int pagenumber = 1;
+    int pagenumber = 0;
     private Unbinder unbinder;
 
     @BindView(R.id.recyclerView)
     RecyclerView recyclerView;
     @BindView(R.id.progressBar)
     ProgressBar progressBar;
+    @BindView(R.id.swipe)
+    SwipeRefreshLayout swipeRefreshLayout;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -66,26 +68,34 @@ public class HomeFragment extends Fragment {
 
     private void initView() {
         hitLists = new ArrayList<>();
-        //bindList(hitLists);
-
+        swipeRefreshLayout.setOnRefreshListener(this);
         recyclerView.setLayoutManager(new LinearLayoutManager(activity));
         recyclerView.setHasFixedSize(true);
 
 
         dataViewModel = ViewModelProviders.of(activity).get(DataViewModel.class);
+        progressBar.setVisibility(View.VISIBLE);
+        recyclerView.setVisibility(View.GONE);
         dataViewModel.getTagsData();
         dataViewModel.getDataModelMutableLiveData().observe(getViewLifecycleOwner(), new Observer<DataModel>() {
             @Override
             public void onChanged(DataModel dataModel) {
-                if (dataModel.getHits() != null) {
-                    progressBar.setVisibility(View.VISIBLE);
+                swipeRefreshLayout.setRefreshing(false);//TODO to make visible gone swipe to refresh loading icon
+                if (dataModel != null && dataModel.getHits() != null) {
+                    //TODO - below (pagenumber == 1)is the first time api call or swipe to refresh
+                    if (pagenumber == 1) {
+                        if (hitLists != null) {
+                            hitLists.clear();
+                            hitLists = new ArrayList<>();
+                        }
+                    }
+                    progressBar.setVisibility(View.GONE);
                     api_in_progress = 0;
                     recyclerView.setVisibility(View.VISIBLE);
-
                     hitLists.addAll(dataModel.getHits());
-                    tagsRecyclerViewAdapter = new TagsRecyclerViewAdapter(activity, hitLists);
-                    recyclerView.setAdapter(tagsRecyclerViewAdapter);
                     bindList(hitLists);
+                } else {
+                    progressBar.setVisibility(View.GONE);
                 }
             }
         });
@@ -93,8 +103,8 @@ public class HomeFragment extends Fragment {
 
     private void bindList(List<DataModel.HitList> hitLists) {
         activity.toolbar.setTitle("Total displaying posts = " + hitLists.size());
-
-        tagsRecyclerViewAdapter.getItemCount();
+        tagsRecyclerViewAdapter = new TagsRecyclerViewAdapter(activity, hitLists);
+        recyclerView.setAdapter(tagsRecyclerViewAdapter);
         tagsRecyclerViewAdapter.setLoadMoreListener(new TagsRecyclerViewAdapter.OnLoadMoreListener() {
             @Override
             public void onLoadMore() {
@@ -102,8 +112,8 @@ public class HomeFragment extends Fragment {
                     @Override
                     public void run() {
                         if (hitLists.size() > 0) {
-                            progressBar.setVisibility(View.VISIBLE);
-                            loadMore();
+                            progressBar.setVisibility(View.GONE);
+                            loadMoreHitsData();
                         }
                     }
                 });
@@ -111,9 +121,10 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void loadMore() {
+    private void loadMoreHitsData() {
         api_in_progress = 1;
         pagenumber++;
+        progressBar.setVisibility(View.VISIBLE);
         dataViewModel.getTagsData();
 
         tagsRecyclerViewAdapter.setLoadMoreListener(new TagsRecyclerViewAdapter.OnLoadMoreListener() {
@@ -124,7 +135,7 @@ public class HomeFragment extends Fragment {
                     public void run() {
                         if (hitLists.size() > 0) {
                             progressBar.setVisibility(View.GONE);
-                            loadMore();
+                            loadMoreHitsData();
                         }
                     }
                 });
@@ -141,5 +152,21 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+    }
+
+    @Override
+    public void onRefresh() {
+        //TODO make api call to get refreshed list of pagenumber 1 -- also clear the previous all data
+        swipeRefreshLayout.setRefreshing(true);
+        pagenumber = 1;
+        dataViewModel.getTagsData();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (unbinder != null) {
+            unbinder.unbind();
+        }
     }
 }
